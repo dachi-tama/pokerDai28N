@@ -295,66 +295,47 @@
     color: var(--accent);
   }
 
-  /* ダウンロードリスト */
-  .download-list {
+  /* 処理済み画像表示エリア */
+  .result-images {
     display: none;
     flex-direction: column;
-    gap: 8px;
+    gap: 16px;
     margin-top: 14px;
   }
 
-  .download-list.visible {
+  .result-images.visible {
     display: flex;
   }
 
-  .download-item {
+  .result-img-wrap {
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    position: relative;
+  }
+
+  .result-img-wrap img {
+    width: 100%;
+    display: block;
+    -webkit-touch-callout: default !important;
+    pointer-events: auto !important;
+  }
+
+  .result-img-label {
+    background: var(--surface2);
+    padding: 8px 12px;
+    font-size: 0.72rem;
+    color: var(--text-sub);
     display: flex;
     align-items: center;
-    gap: 10px;
-    background: var(--surface2);
-    border-radius: 8px;
-    padding: 10px 14px;
-    text-decoration: none;
-    color: var(--text);
-    border: 1px solid var(--border);
-    transition: border-color 0.2s;
+    justify-content: space-between;
   }
 
-  .download-item:hover {
-    border-color: var(--success);
-  }
-
-  .download-item .icon { font-size: 1.2rem; }
-
-  .download-item .info {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .download-item .name {
-    font-size: 0.78rem;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .download-item .size {
-    font-size: 0.68rem;
-    color: var(--text-sub);
+  .result-img-label span {
     font-family: 'JetBrains Mono', monospace;
-  }
-
-  .download-item .dl-btn {
-    background: var(--success);
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    padding: 6px 12px;
-    font-size: 0.72rem;
+    color: var(--success);
     font-weight: 700;
-    cursor: pointer;
-    white-space: nowrap;
+    font-size: 0.7rem;
   }
 
   .note {
@@ -473,11 +454,10 @@
     透かしを入れて保存する
   </button>
 
-  <div class="download-list" id="downloadList"></div>
+  <div class="result-images" id="resultImages"></div>
 
   <p class="note" id="saveNote" style="display:none">
-    ▼ 上のボタンから1枚ずつ保存できます<br>
-    iOSの場合：画像を長押し →「写真に追加」でカメラロールへ保存
+    ↑ 画像を長押し →「写真に追加」でカメラロールへ保存できます
   </p>
 </div>
 
@@ -599,9 +579,9 @@ async function processImages() {
   const progressFill = document.getElementById('progressFill');
   progressBar.classList.add('visible');
 
-  const downloadList = document.getElementById('downloadList');
-  downloadList.innerHTML = '';
-  downloadList.classList.remove('visible');
+  const resultImages = document.getElementById('resultImages');
+  resultImages.innerHTML = '';
+  resultImages.classList.remove('visible');
 
   document.getElementById('processBtn').disabled = true;
   document.getElementById('processBtn').textContent = '処理中…';
@@ -647,20 +627,20 @@ async function processImages() {
     const ext = file.type === 'image/png' ? 'png' : 'jpg';
     const outName = file.name.replace(/\.[^.]+$/, '') + '_watermarked.' + ext;
 
-    // ダウンロードアイテム
-    const item = document.createElement('div');
-    item.className = 'download-item';
+    // 画像をページ内に直接表示
+    const wrap = document.createElement('div');
+    wrap.className = 'result-img-wrap';
 
+    const img = document.createElement('img');
+    img.src = url;
+
+    const label = document.createElement('div');
+    label.className = 'result-img-label';
     const sizeKB = (blob.size / 1024).toFixed(0);
-    item.innerHTML = `
-      <span class="icon">🖼️</span>
-      <div class="info">
-        <div class="name">${outName}</div>
-        <div class="size">${sizeKB} KB</div>
-      </div>
-      <button class="dl-btn" onclick="downloadFile('${url}', '${outName}')">保存</button>
-    `;
-    downloadList.appendChild(item);
+    label.innerHTML = `<span>✓ 完了</span><span>${sizeKB} KB</span>`;
+
+    wrap.append(img, label);
+    resultImages.appendChild(wrap);
 
     // サムネイルのステータス更新
     const statusEl = document.getElementById(`status-${i}`);
@@ -669,18 +649,13 @@ async function processImages() {
     progressFill.style.width = ((i + 1) / selectedFiles.length * 100) + '%';
   }
 
-  downloadList.classList.add('visible');
+  resultImages.classList.add('visible');
   document.getElementById('saveNote').style.display = 'block';
   document.getElementById('processBtn').textContent = '透かしを入れて保存する';
   document.getElementById('processBtn').disabled = false;
 }
 
-function downloadFile(url, name) {
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = name;
-  a.click();
-}
+
 </script>
 </body>
 </html>
