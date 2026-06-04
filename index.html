@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>透かし入れツール</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  :root {
+    --bg: #0f0f13;
+    --surface: #1a1a22;
+    --surface2: #22222e;
+    --border: #2e2e3e;
+    --accent: #4f8ef7;
+    --accent2: #7c5af5;
+    --text: #e8e8f0;
+    --text-sub: #888899;
+    --success: #3ecf8e;
+    --danger: #f75f5f;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px 16px 48px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .header h1 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px;
+  }
+
+  .header p {
+    font-size: 0.78rem;
+    color: var(--text-sub);
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 16px;
+    max-width: 540px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .card-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+
+  .field {
+    margin-bottom: 14px;
+  }
+
+  .field label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-sub);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+
+  .field input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .field input:focus {
+    border-color: var(--accent);
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  /* 透かしプレビュー */
+  .watermark-preview {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 0.62rem;
+    color: rgba(180,180,200,0.35);
+    line-height: 1.7;
+    word-break: break-all;
+    max-height: 90px;
+    overflow: hidden;
+    margin-top: 10px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* 透かし設定 */
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .slider-row label {
+    font-size: 0.75rem;
+    color: var(--text-sub);
+    width: 80px;
+    flex-shrink: 0;
+  }
+
+  .slider-row input[type=range] {
+    flex: 1;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  .slider-row span {
+    font-size: 0.75rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+    width: 36px;
+    text-align: right;
+  }
+
+  /* 画像アップロード */
+  .upload-area {
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 24px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+  }
+
+  .upload-area:hover, .upload-area.dragover {
+    border-color: var(--accent);
+    background: rgba(79,142,247,0.05);
+  }
+
+  .upload-area input[type=file] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .upload-icon {
+    font-size: 2rem;
+    margin-bottom: 8px;
+  }
+
+  .upload-area p {
+    font-size: 0.8rem;
+    color: var(--text-sub);
+  }
+
+  .upload-area strong {
+    color: var(--accent);
+    display: block;
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+  }
+
+  /* サムネイルグリッド */
+  .thumb-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .thumb-item {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--surface2);
+    aspect-ratio: 1;
+  }
+
+  .thumb-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .thumb-remove {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 22px;
+    height: 22px;
+    background: rgba(0,0,0,0.7);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 0.7rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  .thumb-status {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.6);
+    font-size: 0.65rem;
+    padding: 4px 6px;
+    text-align: center;
+    color: #ccc;
+  }
+
+  .thumb-status.done {
+    background: rgba(62,207,142,0.8);
+    color: #fff;
+    font-weight: 700;
+  }
+
+  /* ボタン */
+  .btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 10px;
+    border: none;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(79,142,247,0.3);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px rgba(79,142,247,0.45);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    margin-top: 10px;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* ダウンロードリスト */
+  .download-list {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .download-list.visible {
+    display: flex;
+  }
+
+  .download-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 10px 14px;
+    text-decoration: none;
+    color: var(--text);
+    border: 1px solid var(--border);
+    transition: border-color 0.2s;
+  }
+
+  .download-item:hover {
+    border-color: var(--success);
+  }
+
+  .download-item .icon { font-size: 1.2rem; }
+
+  .download-item .info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .download-item .name {
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .download-item .size {
+    font-size: 0.68rem;
+    color: var(--text-sub);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .download-item .dl-btn {
+    background: var(--success);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .note {
+    font-size: 0.7rem;
+    color: var(--text-sub);
+    text-align: center;
+    margin-top: 12px;
+    line-height: 1.6;
+  }
+
+  .note a {
+    color: var(--accent);
+  }
+
+  .progress-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 14px 0 4px;
+    overflow: hidden;
+    display: none;
+  }
+
+  .progress-bar.visible { display: block; }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    transition: width 0.3s;
+    width: 0%;
+  }
+
+  canvas { display: none; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🔐 透かし入れツール</h1>
+  <p>画像に不正利用防止の透かしを自動で入れます</p>
+</div>
+
+<!-- Step 1: 投稿情報 -->
+<div class="card">
+  <div class="card-title">① 投稿情報を入力</div>
+
+  <div class="row">
+    <div class="field">
+      <label>投稿日付</label>
+      <input type="date" id="postDate">
+    </div>
+    <div class="field">
+      <label>投稿時刻</label>
+      <input type="time" id="postTime">
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Xアカウント名（@なし）</label>
+    <input type="text" id="accountName" placeholder="poker_Dai28N">
+  </div>
+
+  <div class="watermark-preview" id="watermarkPreview">
+    日付・時刻・アカウント名を入力するとプレビューが表示されます
+  </div>
+</div>
+
+<!-- Step 2: 透かし設定 -->
+<div class="card">
+  <div class="card-title">② 透かしの見た目</div>
+
+  <div class="slider-row">
+    <label>不透明度</label>
+    <input type="range" id="opacity" min="5" max="60" value="18">
+    <span id="opacityVal">18%</span>
+  </div>
+
+  <div class="slider-row">
+    <label>文字サイズ</label>
+    <input type="range" id="fontSize" min="10" max="28" value="14">
+    <span id="fontSizeVal">14px</span>
+  </div>
+
+  <div class="slider-row">
+    <label>回転角度</label>
+    <input type="range" id="rotation" min="-60" max="0" value="-30">
+    <span id="rotationVal">-30°</span>
+  </div>
+</div>
+
+<!-- Step 3: 画像選択 -->
+<div class="card">
+  <div class="card-title">③ 画像を選択（最大4枚）</div>
+
+  <div class="upload-area" id="uploadArea">
+    <input type="file" id="fileInput" accept="image/*" multiple>
+    <div class="upload-icon">📁</div>
+    <strong>タップして画像を選択</strong>
+    <p>または画像をドラッグ＆ドロップ</p>
+    <p style="margin-top:6px; font-size:0.7rem;">JPEG・PNG・WEBP対応 / 最大4枚</p>
+  </div>
+
+  <div class="thumb-grid" id="thumbGrid"></div>
+</div>
+
+<!-- Step 4: 処理 -->
+<div class="card">
+  <div class="card-title">④ 透かしを入れて保存</div>
+
+  <div class="progress-bar" id="progressBar">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <button class="btn btn-primary" id="processBtn" disabled onclick="processImages()">
+    透かしを入れて保存する
+  </button>
+
+  <div class="download-list" id="downloadList"></div>
+
+  <p class="note" id="saveNote" style="display:none">
+    ▼ 上のボタンから1枚ずつ保存できます<br>
+    iOSの場合：画像を長押し →「写真に追加」でカメラロールへ保存
+  </p>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+let selectedFiles = [];
+const processedBlobs = [];
+
+// 今日の日付と現在時刻をデフォルトセット
+const now = new Date();
+document.getElementById('postDate').value = now.toISOString().slice(0, 10);
+document.getElementById('postTime').value = now.toTimeString().slice(0, 5);
+
+// プレビュー更新
+function updatePreview() {
+  const date = document.getElementById('postDate').value;
+  const time = document.getElementById('postTime').value;
+  const account = document.getElementById('accountName').value.trim();
+
+  if (!date || !time || !account) {
+    document.getElementById('watermarkPreview').textContent = '日付・時刻・アカウント名を入力するとプレビューが表示されます';
+    return;
+  }
+
+  const formatted = date.replaceAll('-', '/') + '/' + time.replace(':', ':');
+  const line1 = `【この画像は${formatted}にXの@${account}によって投稿されたポストに添付されている画像です。】`;
+  const line2 = `【この日時以外の時間にこの画像がポストされているのを見かけたら、第三者による悪用です】`;
+
+  let preview = '';
+  for (let i = 0; i < 3; i++) {
+    preview += line1.repeat(3) + '\n';
+    preview += line2.repeat(3) + '\n';
+  }
+  document.getElementById('watermarkPreview').textContent = preview;
+
+  checkReady();
+}
+
+['postDate', 'postTime', 'accountName'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updatePreview);
+});
+
+// スライダー
+['opacity', 'fontSize', 'rotation'].forEach(id => {
+  const el = document.getElementById(id);
+  const label = document.getElementById(id + 'Val');
+  el.addEventListener('input', () => {
+    const unit = id === 'opacity' ? '%' : id === 'rotation' ? '°' : 'px';
+    label.textContent = el.value + unit;
+  });
+});
+
+// ファイル選択
+document.getElementById('fileInput').addEventListener('change', e => handleFiles(e.target.files));
+
+const uploadArea = document.getElementById('uploadArea');
+uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+uploadArea.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadArea.classList.remove('dragover');
+  handleFiles(e.dataTransfer.files);
+});
+
+function handleFiles(files) {
+  const remaining = 4 - selectedFiles.length;
+  const toAdd = Array.from(files).filter(f => f.type.startsWith('image/')).slice(0, remaining);
+  selectedFiles = [...selectedFiles, ...toAdd];
+  renderThumbs();
+  checkReady();
+}
+
+function renderThumbs() {
+  const grid = document.getElementById('thumbGrid');
+  grid.innerHTML = '';
+  selectedFiles.forEach((file, i) => {
+    const div = document.createElement('div');
+    div.className = 'thumb-item';
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(file);
+    const btn = document.createElement('button');
+    btn.className = 'thumb-remove';
+    btn.textContent = '✕';
+    btn.onclick = () => { selectedFiles.splice(i, 1); renderThumbs(); checkReady(); };
+    const status = document.createElement('div');
+    status.className = 'thumb-status';
+    status.id = `status-${i}`;
+    status.textContent = file.name.length > 20 ? file.name.slice(0, 18) + '…' : file.name;
+    div.append(img, btn, status);
+    grid.appendChild(div);
+  });
+}
+
+function checkReady() {
+  const date = document.getElementById('postDate').value;
+  const time = document.getElementById('postTime').value;
+  const account = document.getElementById('accountName').value.trim();
+  document.getElementById('processBtn').disabled = !(date && time && account && selectedFiles.length > 0);
+}
+
+// 透かし描画
+async function processImages() {
+  const date = document.getElementById('postDate').value;
+  const time = document.getElementById('postTime').value;
+  const account = document.getElementById('accountName').value.trim();
+  const opacity = parseInt(document.getElementById('opacity').value) / 100;
+  const fontSize = parseInt(document.getElementById('fontSize').value);
+  const rotation = parseInt(document.getElementById('rotation').value) * Math.PI / 180;
+
+  const formatted = date.replaceAll('-', '/') + '/' + time.replace(':', ':');
+  const line1 = `【この画像は${formatted}にXの@${account}によって投稿されたポストに添付されている画像です。】`;
+  const line2 = `【この日時以外の時間にこの画像がポストされているのを見かけたら、第三者による悪用です】`;
+
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+
+  const progressBar = document.getElementById('progressBar');
+  const progressFill = document.getElementById('progressFill');
+  progressBar.classList.add('visible');
+
+  const downloadList = document.getElementById('downloadList');
+  downloadList.innerHTML = '';
+  downloadList.classList.remove('visible');
+
+  document.getElementById('processBtn').disabled = true;
+  document.getElementById('processBtn').textContent = '処理中…';
+
+  for (let i = 0; i < selectedFiles.length; i++) {
+    const file = selectedFiles[i];
+    const bitmap = await createImageBitmap(file);
+
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+
+    ctx.drawImage(bitmap, 0, 0);
+
+    // 透かしを敷き詰める
+    ctx.save();
+    ctx.font = `${fontSize}px "Noto Sans JP", sans-serif`;
+    ctx.fillStyle = `rgba(180, 180, 200, ${opacity})`;
+
+    const lineHeight = fontSize * 1.8;
+    const spacing = fontSize * 1.4;
+
+    // 斜めに敷き詰め
+    const diagLen = Math.sqrt(canvas.width ** 2 + canvas.height ** 2);
+
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate(rotation);
+
+    const cols = Math.ceil(diagLen / 10) + 2;
+    const rows = Math.ceil(diagLen / lineHeight) + 2;
+
+    for (let row = -rows; row <= rows; row++) {
+      const text = row % 2 === 0 ? line1 : line2;
+      const y = row * lineHeight;
+      let x = -diagLen;
+      while (x < diagLen) {
+        ctx.fillText(text, x, y);
+        x += ctx.measureText(text).width + spacing;
+      }
+    }
+
+    ctx.restore();
+
+    // Blob化
+    const blob = await new Promise(res => canvas.toBlob(res, file.type === 'image/png' ? 'image/png' : 'image/jpeg', 0.95));
+    const url = URL.createObjectURL(blob);
+    const ext = file.type === 'image/png' ? 'png' : 'jpg';
+    const outName = file.name.replace(/\.[^.]+$/, '') + '_watermarked.' + ext;
+
+    // ダウンロードアイテム
+    const item = document.createElement('div');
+    item.className = 'download-item';
+
+    const sizeKB = (blob.size / 1024).toFixed(0);
+    item.innerHTML = `
+      <span class="icon">🖼️</span>
+      <div class="info">
+        <div class="name">${outName}</div>
+        <div class="size">${sizeKB} KB</div>
+      </div>
+      <button class="dl-btn" onclick="downloadFile('${url}', '${outName}')">保存</button>
+    `;
+    downloadList.appendChild(item);
+
+    // サムネイルのステータス更新
+    const statusEl = document.getElementById(`status-${i}`);
+    if (statusEl) { statusEl.textContent = '✓ 完了'; statusEl.classList.add('done'); }
+
+    progressFill.style.width = ((i + 1) / selectedFiles.length * 100) + '%';
+  }
+
+  downloadList.classList.add('visible');
+  document.getElementById('saveNote').style.display = 'block';
+  document.getElementById('processBtn').textContent = '透かしを入れて保存する';
+  document.getElementById('processBtn').disabled = false;
+}
+
+function downloadFile(url, name) {
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  a.click();
+}
+</script>
+</body>
+</html>
