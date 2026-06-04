@@ -427,14 +427,14 @@
 
   <div class="slider-row">
     <label>不透明度</label>
-    <input type="range" id="opacity" min="5" max="60" value="18">
-    <span id="opacityVal">18%</span>
+    <input type="range" id="opacity" min="5" max="60" value="35">
+    <span id="opacityVal">35%</span>
   </div>
 
   <div class="slider-row">
     <label>文字サイズ</label>
-    <input type="range" id="fontSize" min="10" max="28" value="14">
-    <span id="fontSizeVal">14px</span>
+    <input type="range" id="fontSize" min="10" max="28" value="18">
+    <span id="fontSizeVal">18px</span>
   </div>
 
   <div class="slider-row">
@@ -585,6 +585,7 @@ async function processImages() {
   const opacity = parseInt(document.getElementById('opacity').value) / 100;
   const fontSize = parseInt(document.getElementById('fontSize').value);
   const rotation = parseInt(document.getElementById('rotation').value) * Math.PI / 180;
+  const fontWeight = 'bold';
 
   const formatted = date.replaceAll('-', '/') + '/' + time.replace(':', ':');
   const line1 = `【この画像は${formatted}にXの@${account}によって投稿されたポストに添付されている画像です。】`;
@@ -615,8 +616,8 @@ async function processImages() {
 
     // 透かしを敷き詰める
     ctx.save();
-    ctx.font = `${fontSize}px "Noto Sans JP", sans-serif`;
-    ctx.fillStyle = `rgba(180, 180, 200, ${opacity})`;
+    ctx.font = `${fontWeight} ${fontSize}px "Noto Sans JP", sans-serif`;
+    ctx.fillStyle = `rgba(160, 160, 180, ${opacity})`;
 
     const lineHeight = fontSize * 1.8;
     const spacing = fontSize * 1.4;
