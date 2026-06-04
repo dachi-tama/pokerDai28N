@@ -502,8 +502,8 @@ function updatePreview() {
   }
 
   const formatted = date.replaceAll('-', '/') + '/' + time.replace(':', ':');
-  const line1 = `【この画像は${formatted}にXの@${account}によって投稿されたポストに添付されている画像です。】`;
-  const line2 = `【この日時以外の時間にこの画像がポストされているのを見かけたら、第三者による悪用です】`;
+  const line1 = `【この画像は${formatted}にXの@${account}によって投稿されたポストに添付されている画像です】`;
+  const line2 = `【この日時以外でこの画像を見かけたら、第三者による悪用です】`;
 
   let preview = '';
   for (let i = 0; i < 3; i++) {
@@ -584,12 +584,11 @@ async function processImages() {
   const account = document.getElementById('accountName').value.trim();
   const opacity = parseInt(document.getElementById('opacity').value) / 100;
   const fontSize = parseInt(document.getElementById('fontSize').value);
-  const rotation = parseInt(document.getElementById('rotation').value) * Math.PI / 180;
   const fontWeight = 'bold';
 
   const formatted = date.replaceAll('-', '/') + '/' + time.replace(':', ':');
-  const line1 = `【この画像は${formatted}にXの@${account}によって投稿されたポストに添付されている画像です。】`;
-  const line2 = `【この日時以外の時間にこの画像がポストされているのを見かけたら、第三者による悪用です】`;
+  const line1 = `【この画像は${formatted}にXの@${account}によって投稿されたポストに添付されている画像です】`;
+  const line2 = `【この日時以外でこの画像を見かけたら、第三者による悪用です】`;
 
   const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d');
@@ -614,30 +613,27 @@ async function processImages() {
 
     ctx.drawImage(bitmap, 0, 0);
 
-    // 透かしを敷き詰める
+    // 透かしを斜めに敷き詰める
     ctx.save();
     ctx.font = `${fontWeight} ${fontSize}px "Noto Sans JP", sans-serif`;
     ctx.fillStyle = `rgba(160, 160, 180, ${opacity})`;
 
-    const lineHeight = fontSize * 1.8;
-    const spacing = fontSize * 1.4;
-
-    // 斜めに敷き詰め
+    const lineHeight = fontSize * 2.0;
     const diagLen = Math.sqrt(canvas.width ** 2 + canvas.height ** 2);
 
     ctx.translate(canvas.width / 2, canvas.height / 2);
-    ctx.rotate(rotation);
+    ctx.rotate(-30 * Math.PI / 180);
 
-    const cols = Math.ceil(diagLen / 10) + 2;
     const rows = Math.ceil(diagLen / lineHeight) + 2;
 
     for (let row = -rows; row <= rows; row++) {
       const text = row % 2 === 0 ? line1 : line2;
+      const textWidth = ctx.measureText(text).width;
       const y = row * lineHeight;
       let x = -diagLen;
       while (x < diagLen) {
         ctx.fillText(text, x, y);
-        x += ctx.measureText(text).width + spacing;
+        x += textWidth + fontSize * 0.5;
       }
     }
 
